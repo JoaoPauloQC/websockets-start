@@ -6,6 +6,7 @@ import * as StompJs from "@stomp/stompjs"
 export default function MyForm() {
   const [name, setName] = useState("")
   const [msg, setMsg] = useState("")
+  const [chatID,setChatID] = useState<number|null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [msgArray, setMsgArray] = useState<string[]>([])
   const clientRef = useRef<StompJs.Client | null>(null)
@@ -14,17 +15,23 @@ export default function MyForm() {
     if (clientRef.current) return // já instanciado
 
     const client = new StompJs.Client({
-        brokerURL: "ws://localhost:8080/ws-msgs-start"
-    })
+        brokerURL: "ws://localhost:8080/ws-msgs-start",
+        connectHeaders:{
+          chatID: chatID?.toString() || ""
+        }
+      })
 
     client.onConnect = (frame) => {
       console.log("Connected:", frame)
-      setIsConnected(true) // só aqui, depois da conexão real
-      client.subscribe("/topics/ws-msg", (message) => {
+      setIsConnected(true)
+      console.log(chatID)
+      if(chatID){ // só aqui, depois da conexão real
+      client.subscribe(`/topics/pvchat/${chatID}`, (message) => {
         const parsed = JSON.parse(message.body).msg
-        console.log("Parse: ",parsed.msg)
+        console.log("Parse: ",parsed)
         updateLiveChat(parsed)
       })
+    }
     }
 
     client.onWebSocketError = (error) => {
@@ -51,7 +58,7 @@ export default function MyForm() {
     console.log("msg: ",msg, "name: ", name)
     if (clientRef.current?.connected) {
       clientRef.current.publish({
-        destination: "/app/new-msg",
+        destination: `/app/pvchat/${chatID}`,
         body: JSON.stringify({ "name":name,"msg": msg }),
       })
     } else {
@@ -65,42 +72,56 @@ export default function MyForm() {
   }
 
   return (
-    <form
-      onSubmit={(e) => e.preventDefault()}
-      className="flex flex-col gap-5"
-    >
-      <input
-        className="border-2 border-neutral-600"
-        placeholder="Name"
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        className="border-2 border-neutral-600"
-        placeholder="Message"
-        onChange={(e) => setMsg(e.target.value)}
-      />
-      <button
-        type="button"
-        className="py-2 px-3 bg-blue-700 text-white cursor-pointer"
-        onClick={sendMessage}
-        disabled={!isConnected} // só habilita quando conectado
-      >
-        Send Msgs
-      </button>
-      <button type="button" className="cursor-pointer" onClick={connect}>
-        Connect
-      </button>
-      <button type="button" className="cursor-pointer" onClick={disconnect}>
-        Disconnect
-      </button>
-
-      <div className="msgs">
+    <div className="w-[900px] flex flex-col h-[800px] border-1 rounded-xl border-neutral-300">
+      <div className="msgs h-[760px] px-2 py-3">
         {msgArray.map((msg, idx) => (
           <div key={idx} className="msg">
             <p>{msg}</p>
           </div>
         ))}
       </div>
-    </form>
+      <div className="line w-full h-0.5  bg-neutral-400"></div>
+    <div
+      onSubmit={(e) => e.preventDefault()}
+      className="flex justify-end items-stretch pt-0.25 h-[40px]"
+    >
+      
+      <div className="inputs flex flex-1 h-full items-stretch min-w-0">
+      <input
+        className="border-2 flex-1 h-full   rounded-bl-xl   outline-0  px-2 py-1 box-border  border-neutral-300"
+        placeholder="Name"
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        className="border-2 flex-1 h-full   outline-0  px-2 py-1 box-border  border-neutral-300"
+        placeholder="Message"
+        onChange={(e) => setMsg(e.target.value)}
+      />
+      <input
+        className="border-2 flex-1 h-full    outline-0  px-2 py-1 box-border  border-neutral-300"
+        placeholder="ChatID"
+        onChange={(e) => setChatID(parseInt(e.target.value))}
+      />
+      </div>
+      <div className="buttons  flex items-stretch ">
+      <button
+        type="button"
+        className="py-1 px-2 box-border   bg-blue-700 text-white cursor-pointer"
+        onClick={sendMessage}
+        disabled={!isConnected} // só habilita quando conectado
+      >
+        Send
+      </button>
+      <button type="button" className="py-1 px-2 box-border   bg-green-500 text-white cursor-pointer" onClick={connect}>
+        Connect
+      </button>
+      <button type="button"         className="py-1 px-2 box-border  rounded-br-xl bg-red-700 text-white cursor-pointer" onClick={disconnect}>
+        Disconnect
+      </button>
+      </div>
+
+      
+    </div>
+    </div>
   )
 }

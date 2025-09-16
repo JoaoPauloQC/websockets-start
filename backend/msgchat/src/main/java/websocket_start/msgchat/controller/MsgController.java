@@ -16,5 +16,12 @@ public class MsgController {
         System.out.println(input.msg());
         return new ChatOutput(HtmlUtils.htmlEscape(input.name() + ": " + input.msg()));
     }
+    @MessageMapping("/pvchat/{chatid}")
+    @SendTo("/topics/pvchat/{chatid}")
+    public ChatOutput privateChat(ChatInput input) {
+        System.out.println(input.msg());
+        return new ChatOutput(HtmlUtils.htmlEscape(input.name() + ": " + input.msg()));
+    }
+
 
 }
