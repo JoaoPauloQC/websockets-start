@@ -79,8 +79,8 @@ export default function MyForm({username}: {username: string}) {
   }
 
   return (
-    <div className="pt-10 flex justify-center">
-    <div className="w-[900px] flex flex-col h-[800px] border-1 rounded-xl border-neutral-300">
+    <div className="py-20  flex justify-center">
+    <div className="w-[900px] bg-white flex flex-col h-[800px] border-1 rounded-xl border-blue-400">
       <div className="msgs h-[760px] px-3 py-3">
         {msgArray.map((msg, idx) => (
           <div key={idx} className={` relative msg flex px-3 py-2 gap-2 border-2 rounded-xl border-neutral-300 ${msg.username == username? "self-end justify-self-end" : " justify-self-start"}`}>
@@ -89,7 +89,7 @@ export default function MyForm({username}: {username: string}) {
           </div>
         ))}
       </div>
-      <div className="line w-full h-0.5  bg-neutral-400"></div>
+      <div className="line w-full h-0.5  bg-blue-400"></div>
     <div
       onSubmit={(e) => e.preventDefault()}
       className="flex justify-end items-stretch pt-0 h-[40px]"
