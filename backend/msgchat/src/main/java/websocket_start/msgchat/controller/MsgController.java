@@ -14,13 +14,13 @@ public class MsgController {
     @SendTo("/topics/ws-msg")
     public ChatOutput newMsg(ChatInput input) {
         System.out.println(input.msg());
-        return new ChatOutput(HtmlUtils.htmlEscape(input.name() + ": " + input.msg()));
+        return new ChatOutput(HtmlUtils.htmlEscape(input.name()),HtmlUtils.htmlEscape(input.msg()));
     }
     @MessageMapping("/pvchat/{chatid}")
     @SendTo("/topics/pvchat/{chatid}")
     public ChatOutput privateChat(ChatInput input) {
         System.out.println(input.msg());
-        return new ChatOutput(HtmlUtils.htmlEscape(input.name() + ": " + input.msg()));
+        return new ChatOutput(HtmlUtils.htmlEscape(input.name()),HtmlUtils.htmlEscape(input.msg()));
     }
 
 

@@ -3,12 +3,17 @@
 import { useRef, useState } from "react"
 import * as StompJs from "@stomp/stompjs"
 
-export default function MyForm() {
-  const [name, setName] = useState("")
+type msg = {
+  username: string,
+  msg: string
+}
+
+export default function MyForm({username}: {username: string}) {
+  
   const [msg, setMsg] = useState("")
   const [chatID,setChatID] = useState<number|null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [msgArray, setMsgArray] = useState<string[]>([])
+  const [msgArray, setMsgArray] = useState<msg[]>([])
   const clientRef = useRef<StompJs.Client | null>(null)
 
   function connect() {
@@ -17,6 +22,7 @@ export default function MyForm() {
     const client = new StompJs.Client({
         brokerURL: "ws://localhost:8080/ws-msgs-start",
         connectHeaders:{
+          user: username,
           chatID: chatID?.toString() || ""
         }
       })
@@ -27,8 +33,9 @@ export default function MyForm() {
       console.log(chatID)
       if(chatID){ // só aqui, depois da conexão real
       client.subscribe(`/topics/pvchat/${chatID}`, (message) => {
-        const parsed = JSON.parse(message.body).msg
+        const parsed = JSON.parse(message.body)
         console.log("Parse: ",parsed)
+        console.log("Equals? ", username == parsed.username)
         updateLiveChat(parsed)
       })
     }
@@ -55,50 +62,47 @@ export default function MyForm() {
 
   function sendMessage() {
     console.log(msgArray)
-    console.log("msg: ",msg, "name: ", name)
+    console.log("msg: ",msg, "name: ", username)
     if (clientRef.current?.connected) {
       clientRef.current.publish({
         destination: `/app/pvchat/${chatID}`,
-        body: JSON.stringify({ "name":name,"msg": msg }),
+        body: JSON.stringify({ "name": username ,"msg": msg }),
       })
     } else {
       console.warn("⚠️ STOMP ainda não conectado")
     }
   }
 
-  function updateLiveChat(newMsg: string) {
+  function updateLiveChat(newMsg: msg) {
     setMsgArray((prev) => [...prev, newMsg])
     console.log(msgArray)
   }
 
   return (
+    <div className="pt-10 flex justify-center">
     <div className="w-[900px] flex flex-col h-[800px] border-1 rounded-xl border-neutral-300">
-      <div className="msgs h-[760px] px-2 py-3">
+      <div className="msgs h-[760px] px-3 py-3">
         {msgArray.map((msg, idx) => (
-          <div key={idx} className="msg">
-            <p>{msg}</p>
+          <div key={idx} className={` relative msg flex px-3 py-2 gap-2 border-2 rounded-xl border-neutral-300 ${msg.username == username? "self-end justify-self-end" : " justify-self-start"}`}>
+            <p>{msg.username}:</p>
+            <p>{msg.msg}</p>
           </div>
         ))}
       </div>
       <div className="line w-full h-0.5  bg-neutral-400"></div>
     <div
       onSubmit={(e) => e.preventDefault()}
-      className="flex justify-end items-stretch pt-0.25 h-[40px]"
+      className="flex justify-end items-stretch pt-0 h-[40px]"
     >
       
       <div className="inputs flex flex-1 h-full items-stretch min-w-0">
       <input
-        className="border-2 flex-1 h-full   rounded-bl-xl   outline-0  px-2 py-1 box-border  border-neutral-300"
-        placeholder="Name"
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        className="border-2 flex-1 h-full   outline-0  px-2 py-1 box-border  border-neutral-300"
+        className=" flex-1 h-full  rounded-bl-xl outline-0  px-2 py-1 box-border  border-neutral-300"
         placeholder="Message"
         onChange={(e) => setMsg(e.target.value)}
       />
       <input
-        className="border-2 flex-1 h-full    outline-0  px-2 py-1 box-border  border-neutral-300"
+        className="border-l-1 flex-1 h-full    outline-0  px-2 py-1 box-border  border-neutral-300"
         placeholder="ChatID"
         onChange={(e) => setChatID(parseInt(e.target.value))}
       />
@@ -106,7 +110,7 @@ export default function MyForm() {
       <div className="buttons  flex items-stretch ">
       <button
         type="button"
-        className="py-1 px-2 box-border   bg-blue-700 text-white cursor-pointer"
+        className="py-1 px-5 box-border   bg-blue-700 text-white cursor-pointer"
         onClick={sendMessage}
         disabled={!isConnected} // só habilita quando conectado
       >
@@ -121,6 +125,7 @@ export default function MyForm() {
       </div>
 
       
+    </div>
     </div>
     </div>
   )
